@@ -1,0 +1,23 @@
+{
+    "google": 
+    
+    [{
+        "login": "my_username google",
+        "password": "my_password",
+        "description": "description"
+    }],
+    
+    "fb": 
+    [{
+        "login": "my_username fb",
+        "password": "my_password",
+        "description": "description"
+    }],
+
+    "insta": 
+    [{
+        "login": "my_username insta",
+        "password": "my_password",
+        "description": "description"
+    }]
+}
