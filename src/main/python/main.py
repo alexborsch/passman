@@ -88,9 +88,27 @@ def do_popup(event):
         m.grab_release() 
 
 
-def add_pass():
 
-    
+
+def add_pass():
+    def saveData(pass_title, pass_username, pass_password, pass_description):
+        
+        title = str(pass_title.get())
+        username = str(pass_username.get())
+        password = str(pass_password.get())
+        descript = str(pass_description.get())
+        data = title + " account information\nUsername: "+ username + "\nPassword: "+ password +"\nDescription: "+ descript
+        print(title + '  ' + data)
+        '''
+        conn = sqlite3.connect(database)
+        cursor = conn.cursor()
+        cursor.execute("INSERT INTO passwords_db (title, data) VALUES (\"{}\",\"{}\")".format(title, data))
+        conn.commit()
+        '''
+        box.delete(0, END)
+        text.delete('1.0', END)
+        load_list()
+        tkWindow.destroy()
 
     tkWindow = Tk()  
     tkWindow.geometry('330x130+350+350')
@@ -114,24 +132,10 @@ def add_pass():
     pass_description = StringVar()
     pass_description_Entry = Entry(tkWindow, textvariable=pass_description, width=35).grid(row=3, column=1)
 
-    def saveData(pass_title, pass_username, pass_password, pass_description):
-
-        title = str(pass_title.get())
-        username = str(pass_username.get())
-        password = str(pass_password.get())
-        descript = str(pass_description.get())
-        data = title + " account information\nUsername: "+ username + "\nPassword: "+ password +"\nDescription: "+ descript
-        print(title + '  ' + data)
-        '''
-        conn = sqlite3.connect(database)
-        cursor = conn.cursor()
-        cursor.execute("INSERT INTO passwords_db (title, data) VALUES (\"{}\",\"{}\")".format(title, data))
-        conn.commit()
-        '''
-
+    
     validateSave = partial(saveData, pass_title, pass_username, pass_password, pass_description)
     saveButton = Button(tkWindow, text="Save", command=validateSave).grid(row=4, column=0)
-    mainloop()
+    tkWindow.mainloop()
 
     
 
