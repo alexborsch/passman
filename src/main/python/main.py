@@ -1,5 +1,6 @@
 from fbs_runtime.application_context.PyQt5 import ApplicationContext
 from PyQt5.QtWidgets import QMainWindow
+import tkinter as tk
 from tkinter import *
 from tkinter.filedialog import asksaveasfile, askopenfile
 from tkinter.messagebox import showerror
@@ -10,16 +11,15 @@ import json
 import sqlite3
 import os
 from functools import partial
+import settings as sets
 
-app_name = 'passman alpha'
-database = 'data/database.db'
 
-with open('settings.json') as f:
-    file_content = f.read()
-    data = json.loads(file_content)
+
 
 
 FILE_NAME = NONE
+
+
 
 def clear():
 	global FILE_NAME
@@ -27,7 +27,7 @@ def clear():
 	text.delete('1.0', END)
 
 def create_new_db():
-    conn = sqlite3.connect(database) # или :memory: чтобы сохранить в RAM
+    conn = sqlite3.connect(sets.database) # или :memory: чтобы сохранить в RAM
     cursor = conn.cursor()
     
     cursor.execute("""CREATE TABLE IF NOT EXISTS `passwords_db` (
@@ -38,15 +38,16 @@ def create_new_db():
     conn.commit()
 
 def load_list():
-    conn = sqlite3.connect(database)
+    global listdata
+    conn = sqlite3.connect(sets.database)
     #conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
     
-    for i in cursor.execute("SELECT title FROM passwords_db"):
-        box.insert(0, i)
+    for listdata in cursor.execute("SELECT title FROM passwords_db"):
+        box.insert(0, listdata)
 
 def load_data(select):
-    conn = sqlite3.connect(database)
+    conn = sqlite3.connect(sets.database)
     #conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
     
@@ -57,11 +58,11 @@ def load_data(select):
 
 def delete_point(selected):
     
-    conn = sqlite3.connect(database)
+    conn = sqlite3.connect(sets.database)
     cursor = conn.cursor()
     cursor.execute("DELETE FROM passwords_db WHERE title = \"{}\"".format(selected))
     conn.commit()
-    messagebox.showinfo("Information", selected+" was delete")
+    messagebox.showinfo("Information", selected+" was deleted from your database")
     box.delete(0, END)
     text.delete('1.0', END)
     load_list()
@@ -88,62 +89,80 @@ def do_popup(event):
         m.grab_release() 
 
 
+class SavePass(tk.Tk):
+    def __init__(self):
+        tk.Tk.__init__(self)
+        self.geometry('330x230+350+350')
+        self.resizable(width=False, height=False)
+        self.title(sets.app_name+' | Add password')
 
+        self.pass_title = tk.StringVar()
+        self.pass_username = tk.StringVar()
+        self.pass_password = tk.StringVar()
+        self.pass_description = tk.StringVar()
 
-def add_pass():
-    def saveData(pass_title, pass_username, pass_password, pass_description):
+        self.pass_title_Label = tk.Label(self, text="Title password: ")
         
-        title = str(pass_title.get())
-        username = str(pass_username.get())
-        password = str(pass_password.get())
-        descript = str(pass_description.get())
-        data = title + " account information\nUsername: "+ username + "\nPassword: "+ password +"\nDescription: "+ descript
-        print(title + '  ' + data)
-        '''
-        conn = sqlite3.connect(database)
-        cursor = conn.cursor()
-        cursor.execute("INSERT INTO passwords_db (title, data) VALUES (\"{}\",\"{}\")".format(title, data))
-        conn.commit()
-        '''
-        box.delete(0, END)
-        text.delete('1.0', END)
-        load_list()
-        tkWindow.destroy()
+        self.pass_title_Entry = tk.Entry(self, textvariable=self.pass_title, width=35)
 
-    tkWindow = Tk()  
-    tkWindow.geometry('330x130+350+350')
-    tkWindow.resizable(width=False, height=False)
-    
-    tkWindow.title(app_name+' | Add password')
+        self.pass_username_Label = tk.Label(self, text="Username: ")
+        
+        self.pass_username_Entry = tk.Entry(self, textvariable=self.pass_username, width=35)
 
-    pass_title_Label = Label(tkWindow, text="Title password: ").grid(row=0, column=0)
-    pass_title = StringVar()
-    pass_title_Entry = Entry(tkWindow, textvariable=pass_title, width=35).grid(row=0, column=1)
+        self.pass_password_Label = tk.Label(self, text="Password: ")
+        
+        self.pass_password_Entry = tk.Entry(self, textvariable=self.pass_password, width=35)
 
-    pass_username_Label = Label(tkWindow, text="Username: ").grid(row=1, column=0)
-    pass_username = StringVar()
-    pass_username_Entry = Entry(tkWindow, textvariable=pass_username, width=35).grid(row=1, column=1)
+        self.pass_description_Label = tk.Label(self, text="Description: ")
+        
+        self.pass_description_Entry = tk.Entry(self, textvariable=self.pass_description, width=35)
 
-    pass_password_Label = Label(tkWindow, text="Password: ").grid(row=2, column=0)
-    pass_password = StringVar()
-    pass_password_Entry = Entry(tkWindow, textvariable=pass_password, width=35).grid(row=2, column=1)
+        self.saveButton = tk.Button(self, text="Save", command=self.on_button)
+        
+        
+        self.pass_title_Label.pack()
+        self.pass_title_Entry.pack()
+        self.pass_username_Label.pack()
+        self.pass_username_Entry.pack()
+        self.pass_password_Label.pack()
+        self.pass_password_Entry.pack()
+        self.pass_description_Label.pack()
+        self.pass_description_Entry.pack()
+        self.saveButton.pack()
 
-    pass_description_Label = Label(tkWindow, text="Description: ").grid(row=3, column=0)
-    pass_description = StringVar()
-    pass_description_Entry = Entry(tkWindow, textvariable=pass_description, width=35).grid(row=3, column=1)
 
-    
-    validateSave = partial(saveData, pass_title, pass_username, pass_password, pass_description)
-    saveButton = Button(tkWindow, text="Save", command=validateSave).grid(row=4, column=0)
-    tkWindow.mainloop()
+        self.mainloop()
 
-    
+    def on_button(self):
+        
+        self.title = str(self.pass_title_Entry.get())
+        self.username = str(self.pass_username_Entry.get())
+        self.password = str(self.pass_password_Entry.get())
+        self.descript = str(self.pass_description_Entry.get())
+        
+        self.data = self.title + " account information\nUsername: "+ self.username + "\nPassword: "+ self.password +"\nDescription: "+ self.descript
+        
+        if self.title in listdata:
+            messagebox.showinfo("Information", self.title+" is in your database. Try again to think of a new password name")
+            self.destroy()
+        else:
+
+            conn = sqlite3.connect(sets.database)
+            cursor = conn.cursor()
+            cursor.execute("INSERT INTO passwords_db (title, data) VALUES (\"{}\",\"{}\")".format(self.title, self.data))
+            conn.commit()
+            
+            box.delete(0, END)
+            text.delete('1.0', END)
+            load_list()
+            self.destroy()
+
 
 tkWindow = Tk()  
 tkWindow.geometry('630x380+300+300')
 tkWindow.resizable(width=True, height=True)
 #tkWindow.iconbitmap('Icon.ico')  
-tkWindow.title(app_name)
+tkWindow.title(sets.app_name)
 
 
 
@@ -154,7 +173,7 @@ scroll = Scrollbar(command=box.yview)
 scroll.pack(side=LEFT, fill=Y)
 box.config(yscrollcommand=scroll.set)
 
-if os.path.exists(database):
+if os.path.exists(sets.database):
     load_list()
 
 box.bind('<<ListboxSelect>>', onselect)
@@ -191,7 +210,7 @@ tkWindow.config(menu=menuBar)
 
 # right click menu
 m = Menu(tkWindow, tearoff = 0) 
-m.add_command(label ="Add", command=add_pass) 
+m.add_command(label ="Add", command=SavePass) 
 m.add_command(label ="Edit", command=edit_point) 
 m.add_command(label ="Delete", command=lambda: delete_point(selected)) 
 
