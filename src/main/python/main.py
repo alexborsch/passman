@@ -19,6 +19,7 @@ import settings as sets
 
 FILE_NAME = NONE
 listdata = NONE
+selected = NONE
 
 
 def clear():
@@ -88,6 +89,8 @@ def do_popup(event):
         m.grab_release() 
 
 
+''' Add new password to db '''
+
 class SavePass(tk.Tk):
     def __init__(self):
         tk.Tk.__init__(self)
@@ -156,6 +159,66 @@ class SavePass(tk.Tk):
             load_list()
             self.destroy()
 
+''' edit selected password '''
+
+class EditPass(tk.Tk):
+    def __init__(self):
+
+        conn = sqlite3.connect(sets.database)
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM passwords_db WHERE title = \"{}\"".format(selected))
+        edit_data = cursor.fetchall()
+        for row in edit_data:
+            edit_data_id = row[0]
+            edit_data_title = row[1]
+            edit_data_data = row[2]
+
+
+        self.post_id = edit_data_id
+        tk.Tk.__init__(self)
+        self.geometry('330x230+350+350')
+        self.resizable(width=False, height=False)
+        self.title(sets.app_name+' | Edit password')
+
+        self.edit_pass_title = tk.StringVar()
+        self.edit_pass_data = tk.StringVar()
+
+        self.edit_pass_title_Label = tk.Label(self, text="Title password: ")
+        self.edit_pass_title_Entry = tk.Entry(self, textvariable=self.edit_pass_title, width=35)
+
+        self.edit_pass_data_Label = tk.Label(self, text="Password data: ")
+        self.edit_pass_data_Entry = tk.Text(self, width=35, height=8)
+
+
+        self.edit_saveButton = tk.Button(self, text="Save", command=self.save_on_button)
+        
+        self.edit_pass_title_Entry.insert(0, edit_data_title)
+        self.edit_pass_data_Entry.insert('1.0', edit_data_data)
+        
+        self.edit_pass_title_Label.pack()
+        self.edit_pass_title_Entry.pack()
+        self.edit_pass_data_Label.pack()
+        self.edit_pass_data_Entry.pack()
+        self.edit_saveButton.pack()
+
+
+        self.mainloop()
+
+    def save_on_button(self):
+        
+        self.edit_title = str(self.edit_pass_title_Entry.get())
+        self.edit_data = str(self.edit_pass_data_Entry.get('1.0', tk.END))
+        
+        conn = sqlite3.connect(sets.database)
+        cursor = conn.cursor()
+        cursor.execute("UPDATE passwords_db set title=\"{}\", data=\"{}\" where id=\"{}\"".format(self.edit_title, self.edit_data, self.post_id))
+        conn.commit()
+        
+        box.delete(0, END)
+        text.delete('1.0', END)
+        load_list()
+        self.destroy()
+        
 
 tkWindow = Tk()  
 tkWindow.geometry('630x380+300+300')
@@ -210,7 +273,7 @@ tkWindow.config(menu=menuBar)
 # right click menu
 m = Menu(tkWindow, tearoff = 0) 
 m.add_command(label ="Add", command=SavePass) 
-m.add_command(label ="Edit", command=edit_point) 
+m.add_command(label ="Edit", command=EditPass) 
 m.add_command(label ="Delete", command=lambda: delete_point(selected)) 
 
 
