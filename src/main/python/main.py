@@ -18,7 +18,7 @@ import settings as sets
 
 
 FILE_NAME = NONE
-
+listdata = NONE
 
 
 def clear():
@@ -27,7 +27,7 @@ def clear():
 	text.delete('1.0', END)
 
 def create_new_db():
-    conn = sqlite3.connect(sets.database) # или :memory: чтобы сохранить в RAM
+    conn = sqlite3.connect(sets.database) 
     cursor = conn.cursor()
     
     cursor.execute("""CREATE TABLE IF NOT EXISTS `passwords_db` (
@@ -40,7 +40,7 @@ def create_new_db():
 def load_list():
     global listdata
     conn = sqlite3.connect(sets.database)
-    #conn.row_factory = sqlite3.Row
+    
     cursor = conn.cursor()
     
     for listdata in cursor.execute("SELECT title FROM passwords_db"):
@@ -48,7 +48,7 @@ def load_list():
 
 def load_data(select):
     conn = sqlite3.connect(sets.database)
-    #conn.row_factory = sqlite3.Row
+    
     cursor = conn.cursor()
     
     sql = "SELECT data FROM passwords_db WHERE title=?"
@@ -78,7 +78,6 @@ def onselect(event):
     idx = int(w.curselection()[0])
     value = w.get(idx)
     selected = value[0]
-    print(selected)
     load_data(value)
 
  
@@ -161,7 +160,7 @@ class SavePass(tk.Tk):
 tkWindow = Tk()  
 tkWindow.geometry('630x380+300+300')
 tkWindow.resizable(width=True, height=True)
-#tkWindow.iconbitmap('Icon.ico')  
+
 tkWindow.title(sets.app_name)
 
 
