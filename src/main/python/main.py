@@ -12,7 +12,7 @@ import sqlite3
 import os
 from functools import partial
 import settings as sets
-
+import pyAesCrypt
 
 
 
@@ -87,6 +87,16 @@ def do_popup(event):
         m.tk_popup(event.x_root, event.y_root) 
     finally: 
         m.grab_release() 
+
+
+def encryptdb(file):
+    buffersize = 512 * 1024
+    pyAesCrypt.encryptFile(str(file), str(file) + '.aes', password, buffersize)
+
+def decryptdb(file):
+
+    pyAesCrypt.decryptFile(str(file), str(os.path.splitext(file)[0]) + '.aes', password, buffersize)
+
 
 
 ''' Add new password to db '''
@@ -219,6 +229,27 @@ class EditPass(tk.Tk):
         load_list()
         self.destroy()
         
+''' decrypt database '''
+class DecryptDB(tk.Tk):
+    def __init__(self):
+
+        tk.Tk.__init__(self)
+        self.geometry('300x80+300+300')
+        self.resizable(width=False, height=False)
+        self.title(sets.app_name+' | Decrypt DB')
+
+        self.decrypt = tk.StringVar()
+
+        self.decryptLabel = tk.Label(self, text="Enter decryption key").grid(row=0, column=0)
+        self.decryptEntry = tk.Entry(self, textvariable=self.decrypt, width=40).grid(row=1, column=0)
+
+        self.decryptButton = tk.Button(self, text="Decrypt", command=self.decrypt_db).grid(row=1, column=1)
+        self.mainloop()
+
+    def decrypt_db(self):
+        self.buffersize = 512 * 1024
+        pyAesCrypt.decryptFile('data/database.db.mk', str(os.path.splitext('data/database.db')[0]) + '.db', self.decrypt, self.buffersize)
+        self.destroy()
 
 tkWindow = Tk()  
 tkWindow.geometry('630x380+300+300')
@@ -254,6 +285,7 @@ text.pack()
 menuBar = Menu(tkWindow)
 fileMenu = Menu(menuBar)
 fileMenu.add_command(label="Create DB", command=create_new_db)
+fileMenu.add_command(label="Decrypt", command=DecryptDB)
 fileMenu.add_command(label="Import")
 fileMenu.add_command(label="Export")
 fileMenu.add_command(label="Help")
