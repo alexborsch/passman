@@ -27,49 +27,31 @@ def clear():
 	FILE_NAME = "Untitled"
 	text.delete('1.0', END)
 
-def create_new_db():
-    conn = sqlite3.connect(sets.database) 
-    cursor = conn.cursor()
-    
-    cursor.execute("""CREATE TABLE IF NOT EXISTS `passwords_db` (
-                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL ,
-                        `title` varchar(255) NOT NULL,
-                        `data` varchar(255) NOT NULL);
-                """)
-    conn.commit()
 
 def load_list():
     global listdata
-    conn = sqlite3.connect(sets.database)
+    listdata = os.listdir('data/'+sets.database+'/')
     
-    cursor = conn.cursor()
+    for i in listdata:
+        box.insert(0, i)
+
+    #print(listdata)
+    #box.insert(0, listdata)
     
-    for listdata in cursor.execute("SELECT title FROM passwords_db"):
-        box.insert(0, listdata)
 
 def load_data(select):
-    conn = sqlite3.connect(sets.database)
-    
-    cursor = conn.cursor()
-    
-    sql = "SELECT data FROM passwords_db WHERE title=?"
-    cursor.execute(sql, select)
+    passfile = open('data/'+sets.database+'/'+select, 'r')
     text.delete('1.0', END)
-    text.insert('1.0', cursor.fetchall())
+    text.insert('1.0', passfile.read())
 
 def delete_point(selected):
-    
-    conn = sqlite3.connect(sets.database)
-    cursor = conn.cursor()
-    cursor.execute("DELETE FROM passwords_db WHERE title = \"{}\"".format(selected))
-    conn.commit()
-    messagebox.showinfo("Information", selected+" was deleted from your database")
+
+    passfile = 'data/'+sets.database+'/'+selected
+    #os.remove(passfile)
+    print(passfile)
     box.delete(0, END)
     text.delete('1.0', END)
     load_list()
-
-def edit_point():
-    pass
 
 
 
@@ -97,7 +79,46 @@ def decryptdb(file):
 
     pyAesCrypt.decryptFile(str(file), str(os.path.splitext(file)[0]) + '.aes', password, buffersize)
 
+''' Create database '''
+class CreateDB(tk.Tk):
+    def __init__(self):
 
+        tk.Tk.__init__(self)
+        self.geometry('300x80+300+300')
+        self.resizable(width=False, height=False)
+        self.title(sets.app_name+' | Create DB')
+
+        self.newdb = tk.StringVar()
+
+        self.newdbLabel = tk.Label(self, text="Enter database name")
+        self.newdbLabel.grid(row=0, column=0)
+        self.newdbEntry = tk.Entry(self, textvariable=self.newdb, width=40)
+        self.newdbEntry.grid(row=1, column=0)
+
+        self.newdbButton = tk.Button(self, text="Create", command=self.create_db)
+        self.newdbButton.grid(row=1, column=1)
+        self.mainloop()
+
+    def create_db(self):
+        self.path = 'data/'+str(self.newdbEntry.get())+'/'
+        try:
+            os.mkdir(self.path)
+            currentdbedit = open('settings.json', 'r')
+            jsonfield = json.load(currentdbedit)
+            currentdbedit.close()
+            jsonfield["database"] = str(self.newdbEntry.get())
+            currentdbedit = open('settings.json', 'w')
+            json.dump(jsonfield, currentdbedit)
+            currentdbedit.close()
+        except OSError:
+            messagebox.showinfo(sets.app_name+" | Create DB", "Creation of the directory %s failed" % self.path)
+        else:
+            box.delete(0, END)
+            text.delete('1.0', END)
+            load_list()
+            self.destroy()
+            messagebox.showinfo(sets.app_name+" | Create DB", "Successfully created the directory %s " % self.path)
+        
 
 ''' Add new password to db '''
 
@@ -114,60 +135,39 @@ class SavePass(tk.Tk):
         self.pass_description = tk.StringVar()
 
         self.pass_title_Label = tk.Label(self, text="Title password: ")
-        
+        self.pass_title_Label.grid(row=0, column=0)
         self.pass_title_Entry = tk.Entry(self, textvariable=self.pass_title, width=35)
+        self.pass_title_Entry.grid(row=0, column=1)
 
         self.pass_username_Label = tk.Label(self, text="Username: ")
-        
+        self.pass_username_Label.grid(row=1, column=0)
         self.pass_username_Entry = tk.Entry(self, textvariable=self.pass_username, width=35)
+        self.pass_username_Entry.grid(row=1, column=1)
 
         self.pass_password_Label = tk.Label(self, text="Password: ")
-        
+        self.pass_password_Label.grid(row=2, column=0)
         self.pass_password_Entry = tk.Entry(self, textvariable=self.pass_password, width=35)
+        self.pass_password_Entry.grid(row=2, column=1)
 
         self.pass_description_Label = tk.Label(self, text="Description: ")
-        
+        self.pass_description_Label.grid(row=3, column=0)
         self.pass_description_Entry = tk.Entry(self, textvariable=self.pass_description, width=35)
+        self.pass_description_Entry.grid(row=3, column=1)
 
-        self.saveButton = tk.Button(self, text="Save", command=self.on_button)
-        
-        
-        self.pass_title_Label.pack()
-        self.pass_title_Entry.pack()
-        self.pass_username_Label.pack()
-        self.pass_username_Entry.pack()
-        self.pass_password_Label.pack()
-        self.pass_password_Entry.pack()
-        self.pass_description_Label.pack()
-        self.pass_description_Entry.pack()
-        self.saveButton.pack()
-
+        self.saveButton = tk.Button(self, text="Save", command=self.on_button).grid(row=4, column=0)
 
         self.mainloop()
 
     def on_button(self):
         
-        self.title = str(self.pass_title_Entry.get())
-        self.username = str(self.pass_username_Entry.get())
-        self.password = str(self.pass_password_Entry.get())
-        self.descript = str(self.pass_description_Entry.get())
-        
-        self.data = self.title + " account information\nUsername: "+ self.username + "\nPassword: "+ self.password +"\nDescription: "+ self.descript
-        
-        if self.title in listdata:
-            messagebox.showinfo("Information", self.title+" is in your database. Try again to think of a new password name")
-            self.destroy()
-        else:
+        new_pass = open('data/'+sets.database+'/'+self.pass_title_Entry.get(), 'w')
+        new_pass.write(self.pass_username_Entry.get()+'\n'+self.pass_password_Entry.get()+'\n'+self.pass_description_Entry.get()+'\n')
+        new_pass.close()
 
-            conn = sqlite3.connect(sets.database)
-            cursor = conn.cursor()
-            cursor.execute("INSERT INTO passwords_db (title, data) VALUES (\"{}\",\"{}\")".format(self.title, self.data))
-            conn.commit()
-            
-            box.delete(0, END)
-            text.delete('1.0', END)
-            load_list()
-            self.destroy()
+        box.delete(0, END)
+        text.delete('1.0', END)
+        load_list()
+        self.destroy()
 
 ''' edit selected password '''
 
@@ -266,7 +266,7 @@ scroll = Scrollbar(command=box.yview)
 scroll.pack(side=LEFT, fill=Y)
 box.config(yscrollcommand=scroll.set)
 
-if os.path.exists(sets.database):
+if os.path.isdir('data/'+sets.database):
     load_list()
 
 box.bind('<<ListboxSelect>>', onselect)
@@ -284,8 +284,9 @@ text.pack()
 # menubar
 menuBar = Menu(tkWindow)
 fileMenu = Menu(menuBar)
-fileMenu.add_command(label="Create DB", command=create_new_db)
+fileMenu.add_command(label="Create DB", command=CreateDB)
 fileMenu.add_command(label="Decrypt", command=DecryptDB)
+fileMenu.add_command(label="Load list", command=load_list)
 fileMenu.add_command(label="Import")
 fileMenu.add_command(label="Export")
 fileMenu.add_command(label="Help")
