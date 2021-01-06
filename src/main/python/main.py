@@ -8,7 +8,6 @@ from tkinter import messagebox
 
 import sys
 import json
-import sqlite3
 import os
 from functools import partial
 import settings as sets
@@ -34,9 +33,6 @@ def load_list():
     
     for i in listdata:
         box.insert(0, i)
-
-    #print(listdata)
-    #box.insert(0, listdata)
     
 
 def load_data(select):
@@ -45,18 +41,13 @@ def load_data(select):
     text.insert('1.0', passfile.read())
 
 def delete_point(selected):
-
-    passfile = 'data/'+sets.database+'/'+selected
-    #os.remove(passfile)
-    print(passfile)
-    box.delete(0, END)
-    text.delete('1.0', END)
-    load_list()
+    pass
 
 
 
 def onselect(event):
     global selected
+    global value
     w = event.widget
     idx = int(w.curselection()[0])
     value = w.get(idx)
@@ -125,7 +116,7 @@ class CreateDB(tk.Tk):
 class SavePass(tk.Tk):
     def __init__(self):
         tk.Tk.__init__(self)
-        self.geometry('330x230+350+350')
+        self.geometry('330x150+350+350')
         self.resizable(width=False, height=False)
         self.title(sets.app_name+' | Add password')
 
@@ -154,7 +145,7 @@ class SavePass(tk.Tk):
         self.pass_description_Entry = tk.Entry(self, textvariable=self.pass_description, width=35)
         self.pass_description_Entry.grid(row=3, column=1)
 
-        self.saveButton = tk.Button(self, text="Save", command=self.on_button).grid(row=4, column=0)
+        self.saveButton = tk.Button(self, text="Save", command=self.on_button, width=15).grid(row=5, column=0)
 
         self.mainloop()
 
@@ -229,6 +220,42 @@ class EditPass(tk.Tk):
         load_list()
         self.destroy()
         
+''' Delete selected password '''
+class DeletePassword(tk.Tk):
+    def __init__(self):
+
+        tk.Tk.__init__(self)
+        self.geometry('330x100+300+300')
+        self.resizable(width=False, height=False)
+        self.title(sets.app_name+' | delete password ' + value)
+
+        #self.decrypt = tk.StringVar()
+
+        self.deleteLabel = tk.Label(self, text="Are you sure you want to remove \nthe password "+value+"\n from the database?", font=("Arial", 12, "bold"))
+        self.deleteLabel.grid(row=0, column=0)
+        '''
+        self.decryptEntry = tk.Entry(self, textvariable=self.decrypt, width=40).grid(row=1, column=0)
+        '''
+        self.deleteButton = tk.Button(self, text="Delete", width=7, command=self.delete).grid(row=1, column=0)
+        self.cancelButton = tk.Button(self, text="Cancel", width=7, command=self.cancel).grid(row=1, column=1)
+        self.mainloop()
+
+    def cancel(self):
+        box.delete(0, END)
+        text.delete('1.0', END)
+        load_list()
+        self.destroy()
+
+
+    def delete(self):
+        passfile = 'data/'+sets.database+'/'+value
+        os.remove(passfile)
+        box.delete(0, END)
+        text.delete('1.0', END)
+        load_list()
+        self.destroy()
+    
+
 ''' decrypt database '''
 class DecryptDB(tk.Tk):
     def __init__(self):
@@ -307,7 +334,7 @@ tkWindow.config(menu=menuBar)
 m = Menu(tkWindow, tearoff = 0) 
 m.add_command(label ="Add", command=SavePass) 
 m.add_command(label ="Edit", command=EditPass) 
-m.add_command(label ="Delete", command=lambda: delete_point(selected)) 
+m.add_command(label ="Delete", command=DeletePassword) 
 
 
 tkWindow.mainloop()
