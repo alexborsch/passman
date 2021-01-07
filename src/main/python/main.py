@@ -10,11 +10,40 @@ import sys
 import json
 import os
 from functools import partial
-import settings as sets
 import pyAesCrypt
+import time
+import threading
+
+app_name = 'passman alpha'
+
+def load_settings():
+    with open('settings.json') as f:
+        file_content = f.read()
+        data = json.loads(file_content)
+    return data
+
+getdata = load_settings()
+
+database = getdata['database']
 
 
 
+''' reloading settings.json '''
+
+def fileWatcher():
+    global data, database
+    while True:
+        f = open('settings.json')
+        content = f.read()
+        f.close()
+        if content != database:
+            print("File was modified! Reloading it...")
+            data = json.loads(content)
+            database = content
+            
+        return database
+        load_list()
+        
 
 FILE_NAME = NONE
 listdata = NONE
@@ -29,20 +58,15 @@ def clear():
 
 def load_list():
     global listdata
-    listdata = os.listdir('data/'+sets.database+'/')
-    
+    listdata = os.listdir('data/'+database+'/')
     for i in listdata:
         box.insert(0, i)
     
 
 def load_data(select):
-    passfile = open('data/'+sets.database+'/'+select, 'r')
+    passfile = open('data/'+database+'/'+select, 'r')
     text.delete('1.0', END)
     text.insert('1.0', passfile.read())
-
-def delete_point(selected):
-    pass
-
 
 
 def onselect(event):
@@ -62,6 +86,8 @@ def do_popup(event):
         m.grab_release() 
 
 
+
+
 def encryptdb(file):
     buffersize = 512 * 1024
     pyAesCrypt.encryptFile(str(file), str(file) + '.aes', password, buffersize)
@@ -77,7 +103,7 @@ class CreateDB(tk.Tk):
         tk.Tk.__init__(self)
         self.geometry('300x80+300+300')
         self.resizable(width=False, height=False)
-        self.title(sets.app_name+' | Create DB')
+        self.title(app_name+' | Create DB')
 
         self.newdb = tk.StringVar()
 
@@ -102,13 +128,13 @@ class CreateDB(tk.Tk):
             json.dump(jsonfield, currentdbedit)
             currentdbedit.close()
         except OSError:
-            messagebox.showinfo(sets.app_name+" | Create DB", "Creation of the directory %s failed" % self.path)
+            messagebox.showinfo(app_name+" | Create DB", "Creation of the directory %s failed" % self.path)
         else:
             box.delete(0, END)
             text.delete('1.0', END)
             load_list()
             self.destroy()
-            messagebox.showinfo(sets.app_name+" | Create DB", "Successfully created the directory %s " % self.path)
+            messagebox.showinfo(app_name+" | Create DB", "Successfully created the directory %s " % self.path)
         
 
 ''' Add new password to db '''
@@ -118,7 +144,7 @@ class SavePass(tk.Tk):
         tk.Tk.__init__(self)
         self.geometry('330x150+350+350')
         self.resizable(width=False, height=False)
-        self.title(sets.app_name+' | Add password')
+        self.title(app_name+' | Add password')
 
         self.pass_title = tk.StringVar()
         self.pass_username = tk.StringVar()
@@ -151,7 +177,7 @@ class SavePass(tk.Tk):
 
     def on_button(self):
         
-        new_pass = open('data/'+sets.database+'/'+self.pass_title_Entry.get(), 'w')
+        new_pass = open('data/'+database+'/'+self.pass_title_Entry.get(), 'w')
         new_pass.write(self.pass_username_Entry.get()+'\n'+self.pass_password_Entry.get()+'\n'+self.pass_description_Entry.get()+'\n')
         new_pass.close()
 
@@ -165,59 +191,38 @@ class SavePass(tk.Tk):
 class EditPass(tk.Tk):
     def __init__(self):
 
-        conn = sqlite3.connect(sets.database)
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM passwords_db WHERE title = \"{}\"".format(selected))
-        edit_data = cursor.fetchall()
-        for row in edit_data:
-            edit_data_id = row[0]
-            edit_data_title = row[1]
-            edit_data_data = row[2]
-
-
-        self.post_id = edit_data_id
         tk.Tk.__init__(self)
-        self.geometry('330x230+350+350')
+        self.geometry('400x230+350+350')
         self.resizable(width=False, height=False)
-        self.title(sets.app_name+' | Edit password')
+        self.title(app_name+' | Edit password')
 
         self.edit_pass_title = tk.StringVar()
         self.edit_pass_data = tk.StringVar()
 
         self.edit_pass_title_Label = tk.Label(self, text="Title password: ")
+
         self.edit_pass_title_Entry = tk.Entry(self, textvariable=self.edit_pass_title, width=35)
-
         self.edit_pass_data_Label = tk.Label(self, text="Password data: ")
-        self.edit_pass_data_Entry = tk.Text(self, width=35, height=8)
+        self.edit_pass_data_Entry = tk.Text(self, width=40, height=8, wrap="word")
 
+        self.scrollb = Scrollbar(self, orient=VERTICAL, command=self.edit_pass_data_Entry.yview)
+        self.scrollb.pack(side="right", fill="y")
+        self.edit_pass_data_Entry.configure(yscrollcommand=self.scrollb.set)
 
-        self.edit_saveButton = tk.Button(self, text="Save", command=self.save_on_button)
-        
+        self.edit_saveButton = tk.Button(self, text="Save", width=10, command=self.save_on_button)
+        '''
         self.edit_pass_title_Entry.insert(0, edit_data_title)
         self.edit_pass_data_Entry.insert('1.0', edit_data_data)
-        
+        '''
         self.edit_pass_title_Label.pack()
         self.edit_pass_title_Entry.pack()
         self.edit_pass_data_Label.pack()
         self.edit_pass_data_Entry.pack()
         self.edit_saveButton.pack()
 
-
         self.mainloop()
 
     def save_on_button(self):
-        
-        self.edit_title = str(self.edit_pass_title_Entry.get())
-        self.edit_data = str(self.edit_pass_data_Entry.get('1.0', tk.END))
-        
-        conn = sqlite3.connect(sets.database)
-        cursor = conn.cursor()
-        cursor.execute("UPDATE passwords_db set title=\"{}\", data=\"{}\" where id=\"{}\"".format(self.edit_title, self.edit_data, self.post_id))
-        conn.commit()
-        
-        box.delete(0, END)
-        text.delete('1.0', END)
-        load_list()
         self.destroy()
         
 ''' Delete selected password '''
@@ -227,7 +232,7 @@ class DeletePassword(tk.Tk):
         tk.Tk.__init__(self)
         self.geometry('330x100+300+300')
         self.resizable(width=False, height=False)
-        self.title(sets.app_name+' | delete password ' + value)
+        self.title(app_name+' | delete password ' + value)
 
         #self.decrypt = tk.StringVar()
 
@@ -248,7 +253,7 @@ class DeletePassword(tk.Tk):
 
 
     def delete(self):
-        passfile = 'data/'+sets.database+'/'+value
+        passfile = 'data/'+database+'/'+value
         os.remove(passfile)
         box.delete(0, END)
         text.delete('1.0', END)
@@ -263,7 +268,7 @@ class DecryptDB(tk.Tk):
         tk.Tk.__init__(self)
         self.geometry('300x80+300+300')
         self.resizable(width=False, height=False)
-        self.title(sets.app_name+' | Decrypt DB')
+        self.title(app_name+' | Decrypt DB')
 
         self.decrypt = tk.StringVar()
 
@@ -282,7 +287,7 @@ tkWindow = Tk()
 tkWindow.geometry('630x380+300+300')
 tkWindow.resizable(width=True, height=True)
 
-tkWindow.title(sets.app_name)
+tkWindow.title(app_name)
 
 
 
@@ -293,7 +298,7 @@ scroll = Scrollbar(command=box.yview)
 scroll.pack(side=LEFT, fill=Y)
 box.config(yscrollcommand=scroll.set)
 
-if os.path.isdir('data/'+sets.database):
+if os.path.isdir('data/'+database):
     load_list()
 
 box.bind('<<ListboxSelect>>', onselect)
@@ -313,7 +318,7 @@ menuBar = Menu(tkWindow)
 fileMenu = Menu(menuBar)
 fileMenu.add_command(label="Create DB", command=CreateDB)
 fileMenu.add_command(label="Decrypt", command=DecryptDB)
-fileMenu.add_command(label="Load list", command=load_list)
+fileMenu.add_command(label="Reload list", command=fileWatcher)
 fileMenu.add_command(label="Import")
 fileMenu.add_command(label="Export")
 fileMenu.add_command(label="Help")
