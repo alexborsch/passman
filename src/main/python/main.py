@@ -190,7 +190,14 @@ class SavePass(tk.Tk):
 
 class EditPass(tk.Tk):
     def __init__(self):
+        self.passfile = 'data/'+database+'/'+value
+        editpassfile = open(self.passfile, 'r')
+        edit_title = value
 
+        '''
+        text.delete('1.0', END)
+        text.insert('1.0', passfile.read())
+        '''
         tk.Tk.__init__(self)
         self.geometry('400x230+350+350')
         self.resizable(width=False, height=False)
@@ -203,26 +210,41 @@ class EditPass(tk.Tk):
 
         self.edit_pass_title_Entry = tk.Entry(self, textvariable=self.edit_pass_title, width=35)
         self.edit_pass_data_Label = tk.Label(self, text="Password data: ")
-        self.edit_pass_data_Entry = tk.Text(self, width=40, height=8, wrap="word")
+        self.edit_pass_data_Entry = tk.Text(self, width=40, height=8, wrap="word",relief=RAISED)
 
         self.scrollb = Scrollbar(self, orient=VERTICAL, command=self.edit_pass_data_Entry.yview)
         self.scrollb.pack(side="right", fill="y")
         self.edit_pass_data_Entry.configure(yscrollcommand=self.scrollb.set)
 
         self.edit_saveButton = tk.Button(self, text="Save", width=10, command=self.save_on_button)
-        '''
-        self.edit_pass_title_Entry.insert(0, edit_data_title)
-        self.edit_pass_data_Entry.insert('1.0', edit_data_data)
-        '''
+        self.edit_cancelButton = tk.Button(self, text="Cancel", width=10, command=self.cancel_on_button)
+        
+        self.edit_pass_title_Entry.insert(0, edit_title)
+        self.edit_pass_data_Entry.insert('1.0', editpassfile.read())
+        
         self.edit_pass_title_Label.pack()
         self.edit_pass_title_Entry.pack()
         self.edit_pass_data_Label.pack()
-        self.edit_pass_data_Entry.pack()
-        self.edit_saveButton.pack()
+        self.edit_pass_data_Entry.pack(fill=BOTH, expand=True)
+        self.edit_saveButton.pack(side=RIGHT, padx=5, pady=5)
+        self.edit_cancelButton.pack(side=RIGHT)
 
         self.mainloop()
 
     def save_on_button(self):
+        new_pass = open(self.passfile, 'w')
+        data = self.edit_pass_data_Entry.get('1.0', END)
+        new_pass.write(data)
+        new_pass.close()
+        box.delete(0, END)
+        text.delete('1.0', END)
+        load_list()
+        self.destroy()
+
+    def cancel_on_button(self):
+        box.delete(0, END)
+        text.delete('1.0', END)
+        load_list()
         self.destroy()
         
 ''' Delete selected password '''
