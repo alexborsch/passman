@@ -87,12 +87,7 @@ def do_popup(event):
 
 
 
-
-def encryptdb(file):
-    buffersize = 512 * 1024
-    pyAesCrypt.encryptFile(str(file), str(file) + '.aes', password, buffersize)
-
-def decryptdb(file):
+def decryptdb(file, password):
 
     pyAesCrypt.decryptFile(str(file), str(os.path.splitext(file)[0]) + '.aes', password, buffersize)
 
@@ -150,6 +145,7 @@ class SavePass(tk.Tk):
         self.pass_username = tk.StringVar()
         self.pass_password = tk.StringVar()
         self.pass_description = tk.StringVar()
+        self.pass_decrypt = tk.StringVar()
 
         self.pass_title_Label = tk.Label(self, text="Title password: ")
         self.pass_title_Label.grid(row=0, column=0)
@@ -171,20 +167,31 @@ class SavePass(tk.Tk):
         self.pass_description_Entry = tk.Entry(self, textvariable=self.pass_description, width=35)
         self.pass_description_Entry.grid(row=3, column=1)
 
+        self.pass_decrypt_Label = tk.Label(self, text="Decrypt password: ")
+        self.pass_decrypt_Label.grid(row=4, column=0)
+        self.pass_decrypt_Entry = tk.Entry(self, textvariable=self.pass_decrypt, width=35)
+        self.pass_decrypt_Entry.grid(row=4, column=1)
+
         self.saveButton = tk.Button(self, text="Save", command=self.on_button, width=15).grid(row=5, column=0)
 
         self.mainloop()
 
     def on_button(self):
-        
-        new_pass = open('data/'+database+'/'+self.pass_title_Entry.get(), 'w')
+        passfile = 'data/'+database+'/'+self.pass_title_Entry.get()
+        decryptpassword = self.pass_decrypt_Entry.get()
+        new_pass = open(passfile, 'w')
         new_pass.write(self.pass_username_Entry.get()+'\n'+self.pass_password_Entry.get()+'\n'+self.pass_description_Entry.get()+'\n')
         new_pass.close()
 
+        buffersize = 512 * 1024
+        pyAesCrypt.encryptFile(str(passfile), str(passfile) + '.aes', decryptpassword, buffersize)
+        os.remove(passfile)
         box.delete(0, END)
         text.delete('1.0', END)
         load_list()
         self.destroy()
+
+
 
 ''' edit selected password '''
 
