@@ -37,12 +37,12 @@ def fileWatcher():
         content = f.read()
         f.close()
         if content != database:
-            print("File was modified! Reloading it...")
+            #print("Database file was modified! Reloading it...")
             data = json.loads(content)
             database = content
             
-        return database
-        load_list()
+            return database
+            load_list()
         
 
 FILE_NAME = NONE
@@ -194,10 +194,6 @@ class EditPass(tk.Tk):
         editpassfile = open(self.passfile, 'r')
         edit_title = value
 
-        '''
-        text.delete('1.0', END)
-        text.insert('1.0', passfile.read())
-        '''
         tk.Tk.__init__(self)
         self.geometry('400x230+350+350')
         self.resizable(width=False, height=False)
@@ -259,12 +255,14 @@ class DeletePassword(tk.Tk):
         #self.decrypt = tk.StringVar()
 
         self.deleteLabel = tk.Label(self, text="Are you sure you want to remove \nthe password "+value+"\n from the database?", font=("Arial", 12, "bold"))
-        self.deleteLabel.grid(row=0, column=0)
-        '''
-        self.decryptEntry = tk.Entry(self, textvariable=self.decrypt, width=40).grid(row=1, column=0)
-        '''
-        self.deleteButton = tk.Button(self, text="Delete", width=7, command=self.delete).grid(row=1, column=0)
-        self.cancelButton = tk.Button(self, text="Cancel", width=7, command=self.cancel).grid(row=1, column=1)
+       
+        self.deleteButton = tk.Button(self, text="Delete", width=10, command=self.delete)
+        self.cancelButton = tk.Button(self, text="Cancel", width=10, command=self.cancel)
+
+        self.deleteLabel.pack(fill=BOTH, expand=True)
+        self.deleteButton.pack(side=RIGHT, padx=5, pady=5)
+        self.cancelButton.pack(side=RIGHT)
+
         self.mainloop()
 
     def cancel(self):
