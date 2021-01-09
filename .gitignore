@@ -1,5 +1,6 @@
 source/
 data/*
 venv/
+temp/*
 src/main/python/__pycache__/
 test.py

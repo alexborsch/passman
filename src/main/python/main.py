@@ -65,6 +65,7 @@ def load_list():
 
 def load_data(select):
     passfile = open('data/'+database+'/'+select, 'r')
+    #pyAesCrypt.decryptFile(str(file), str(os.path.splitext(file)[0]) + '.aes', password, buffersize)
     text.delete('1.0', END)
     text.insert('1.0', passfile.read())
 
@@ -76,7 +77,8 @@ def onselect(event):
     idx = int(w.curselection()[0])
     value = w.get(idx)
     selected = value[0]
-    load_data(value)
+    #load_data(value)
+    DecryptDB(value)
 
  
 def do_popup(event): 
@@ -290,24 +292,35 @@ class DeletePassword(tk.Tk):
 
 ''' decrypt database '''
 class DecryptDB(tk.Tk):
-    def __init__(self):
+    def __init__(self, value):
 
         tk.Tk.__init__(self)
-        self.geometry('300x80+300+300')
+        self.geometry('330x80+300+300')
         self.resizable(width=False, height=False)
-        self.title(app_name+' | Decrypt DB')
+        self.title(app_name+' | Decrypt file '+value)
 
         self.decrypt = tk.StringVar()
 
-        self.decryptLabel = tk.Label(self, text="Enter decryption key").grid(row=0, column=0)
-        self.decryptEntry = tk.Entry(self, textvariable=self.decrypt, width=40).grid(row=1, column=0)
+        self.decryptLabel = tk.Label(self, text="Enter decryption key")
+        self.decryptEntry = tk.Entry(self, textvariable=self.decrypt, width=40)
 
-        self.decryptButton = tk.Button(self, text="Decrypt", command=self.decrypt_db).grid(row=1, column=1)
+        self.decryptButton = tk.Button(self, text="Decrypt", command=self.decrypt_db)
+
+        self.decryptLabel.pack()
+        self.decryptEntry.pack()
+        self.decryptButton.pack()
+
         self.mainloop()
 
     def decrypt_db(self):
-        self.buffersize = 512 * 1024
-        pyAesCrypt.decryptFile('data/database.db.mk', str(os.path.splitext('data/database.db')[0]) + '.db', self.decrypt, self.buffersize)
+        buffersize = 512 * 1024
+        password = self.decryptEntry.get()
+        decryptfile = 'data/'+database+'/'+value
+        pyAesCrypt.decryptFile(str(decryptfile), str('temp/' + value + '.pass'), password, buffersize)
+        
+        decryptfile = open('temp/'+value+'.pass', 'r')
+        text.delete('1.0', END)
+        text.insert('1.0', decryptfile.read())
         self.destroy()
 
 tkWindow = Tk()  
